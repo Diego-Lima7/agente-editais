@@ -14,28 +14,162 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
 
-# Configuração da Página - Visual Limpo e Focado no Chat
+# Configuração da Página - Visual de Aplicação AI de Alto Padrão
 st.set_page_config(
-    page_title="Agente Especialista em Editais",
+    page_title="EditalAI • Inteligência em Vestibulares",
     page_icon="🎓",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# Estilização CSS para ocultar elementos técnicos e menus desnecessários
+# Estilização CSS Avançada (UI Design padrão Perplexity / OpenAI / Linear)
 st.markdown("""
 <style>
-    /* Oculta menu padrão do Streamlit e rodapé */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Ocultar elementos padrão do Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Melhora a apresentação dos botões de exemplo */
-    .stButton>button {
-        border-radius: 20px;
-        padding: 6px 14px;
-        font-size: 14px;
+    /* Espaçamento superior mais fluido */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 5rem !important;
+        max-width: 820px !important;
+    }
+
+    /* Hero Badge com animação de pulso */
+    .hero-badge-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 14px;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        color: #4F46E5;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        backdrop-filter: blur(10px);
+    }
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #10B981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Título com Gradiente Moderno */
+    .hero-title {
+        font-size: 2.5rem !important;
+        font-weight: 800 !important;
+        text-align: center;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        margin-bottom: 12px;
+        color: #1E293B;
+    }
+    .gradient-text {
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 45%, #EC4899 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+
+    /* Subtítulo */
+    .hero-subtitle {
+        text-align: center;
+        font-size: 1.05rem;
+        color: #64748B;
+        line-height: 1.55;
+        max-width: 650px;
+        margin: 0 auto 24px auto;
+        font-weight: 400;
+    }
+
+    /* Pills das Universidades */
+    .bancas-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 28px;
+    }
+    .banca-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 5px 12px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #334155;
         transition: all 0.2s ease;
+    }
+    .banca-chip:hover {
+        border-color: #6366F1;
+        color: #4F46E5;
+        background: #EEF2FF;
+        transform: translateY(-1px);
+    }
+
+    /* Botões Interativos (Cards de Atalho) */
+    .stButton > button {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        color: #1E293B !important;
+        border-radius: 14px !important;
+        padding: 12px 14px !important;
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-align: center !important;
+        min-height: 48px !important;
+    }
+    .stButton > button:hover {
+        border-color: #6366F1 !important;
+        color: #4F46E5 !important;
+        background: #F8FAFF !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 18px rgba(99, 102, 241, 0.12) !important;
+    }
+
+    /* Mensagens do Chat */
+    [data-testid="stChatMessage"] {
+        background: #FFFFFF !important;
+        border: 1px solid #F1F5F9 !important;
+        border-radius: 18px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+        margin-bottom: 12px !important;
+        padding: 18px !important;
+    }
+    
+    /* Input de Chat Fixo */
+    [data-testid="stChatInput"] {
+        border-radius: 9999px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -203,33 +337,48 @@ with st.sidebar:
                     st.success("Concluído!")
                     st.rerun()
 
-# Área Principal de Chat (Clean & Estilo ChatGPT)
-st.title("🎓 Consultor Inteligente de Editais")
-st.markdown("Tire dúvidas sobre regras, cronogramas, materiais e exigências de vestibulares oficiais.")
-st.caption("🏛️ **Bancas cadastradas:** UECE • UNIFOR • ENEM • UNICAMP • UEMA • URCA • UNICHRISTUS")
+# Área Principal - Hero & Branding de Nível Comercial
+st.markdown("""
+<div class="hero-badge-container">
+    <div class="hero-badge">
+        <span class="pulse-dot"></span> Base Oficial Multiversidades • 2026/2027
+    </div>
+</div>
+<h1 class="hero-title">Consultor Inteligente de <span class="gradient-text">Editais de Vestibular</span></h1>
+<p class="hero-subtitle">Consulte regras, canetas permitidas, cronogramas e critérios eliminatórios com respostas embasadas nas páginas oficiais das bancas.</p>
+<div class="bancas-wrapper">
+    <span class="banca-chip">🏛️ UECE</span>
+    <span class="banca-chip">🎓 UNIFOR</span>
+    <span class="banca-chip">📘 ENEM</span>
+    <span class="banca-chip">🔬 UNICAMP</span>
+    <span class="banca-chip">🏛️ UEMA</span>
+    <span class="banca-chip">🏫 URCA</span>
+    <span class="banca-chip">🩺 UNICHRISTUS</span>
+</div>
+""", unsafe_allow_html=True)
 
 # Inicializa histórico de mensagens
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Olá! Sou seu assistente de editais. Faça sua pergunta sobre regras da prova, documentos permitidos, canetas, horários ou isenção de taxa."
+            "content": "👋 Olá! Sou seu **Assistente de Editais**. Selecione um dos atalhos abaixo ou faça qualquer pergunta sobre canetas, materiais, horários ou documentos."
         }
     ]
 
-# Sugestões rápidas
+# Sugestões rápidas em cards interativos
 cols = st.columns(4)
 with cols[0]:
-    if st.button("🖊️ Qual caneta levar?"):
+    if st.button("🖊️ Tipo de Caneta", use_container_width=True):
         st.session_state.nova_pergunta = "É possível o candidato levar qual tipo de caneta no dia da prova?"
 with cols[1]:
-    if st.button("🪪 Documentos aceitos"):
+    if st.button("🪪 Documentos Aceitos", use_container_width=True):
         st.session_state.nova_pergunta = "Quais são os documentos de identificação válidos para realizar a prova?"
 with cols[2]:
-    if st.button("🛑 O que elimina?"):
+    if st.button("🛑 O que Elimina?", use_container_width=True):
         st.session_state.nova_pergunta = "Quais situações ou objetos causam a eliminação imediata do candidato?"
 with cols[3]:
-    if st.button("⏰ Horário dos portões"):
+    if st.button("⏰ Horário dos Portões", use_container_width=True):
         st.session_state.nova_pergunta = "Qual é o horário limite para fechamento dos portões nos dias de prova?"
 
 # Exibe histórico do chat
