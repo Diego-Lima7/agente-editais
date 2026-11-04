@@ -33,6 +33,10 @@ if not api_key:
     except Exception:
         api_key = None
 
+if api_key:
+    os.environ["GEMINI_API_KEY"] = api_key
+    os.environ["GOOGLE_API_KEY"] = api_key
+
 def criar_hash_unico(doc: Document) -> str:
     meta = dict(doc.metadata)
     meta["preview"] = hashlib.md5(doc.page_content.encode("utf-8")).hexdigest()[:8]
@@ -42,6 +46,9 @@ def criar_hash_unico(doc: Document) -> str:
 def carregar_motor_rag(api_key_val):
     if not api_key_val:
         return None, None
+    
+    os.environ["GEMINI_API_KEY"] = api_key_val
+    os.environ["GOOGLE_API_KEY"] = api_key_val
     
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-2",
@@ -274,11 +281,7 @@ if pergunta_para_rodar:
                         time.sleep(3)
                 
                 if erro_busca:
-                    resposta = (
-                        "⚠️ **Limite de requisições momentâneo do Google:**\n\n"
-                        "Como você acabou de indexar muitos editais de uma só vez (880 trechos!), a API do Google "
-                        "pediu um breve resfriamento de 30 a 60 segundos. Por favor, aguarde alguns instantes e tente novamente."
-                    )
+                    resposta = f"⚠️ **Erro na busca de trechos:**\n\n```text\n{str(erro_busca)}\n```"
                 elif not trechos_recuperados:
                     resposta = "Não encontrei informações sobre este tópico nos editais cadastrados."
                 else:
