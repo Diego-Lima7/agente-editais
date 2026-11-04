@@ -148,10 +148,34 @@ with st.sidebar:
             st.rerun()
 
     st.subheader("📄 Editais Carregados")
-    pdfs_existentes = glob.glob(f"{PASTA_EDITAIS}/*.pdf")
+    pdfs_existentes = glob.glob(f"{PASTA_EDITAIS}/*.pdf") + glob.glob("*.pdf")
+    pdfs_existentes = list(set([p for p in pdfs_existentes if not p.endswith("_db") and os.path.isfile(p)]))
+    
     if pdfs_existentes:
         for p in pdfs_existentes:
             st.write(f"• `{os.path.basename(p)}`")
+            
+        # Verifica se o banco já foi indexado
+        total_indexado = 0
+        try:
+            total_indexado = vectorstore._collection.count() if vectorstore else 0
+        except Exception:
+            total_indexado = 0
+
+        if total_indexado == 0:
+            st.warning("⚠️ Editais carregados, mas ainda NÃO indexados no banco de dados!")
+            if st.button("🚀 Indexar Editais Agora", type="primary"):
+                with st.spinner("Indexando todos os editais... Isso levará cerca de 1 a 2 minutos."):
+                    qtd_arq, qtd_trechos = indexar_arquivos(vectorstore)
+                    st.success(f"🎉 {qtd_trechos} trechos indexados de {qtd_arq} editais!")
+                    st.rerun()
+        else:
+            st.success(f"🧠 Memória ativa: {total_indexado} trechos indexados.")
+            if st.button("🔄 Reindexar Todos os Editais"):
+                with st.spinner("Reindexando editais..."):
+                    qtd_arq, qtd_trechos = indexar_arquivos(vectorstore)
+                    st.success(f"Concluído! {qtd_trechos} trechos indexados.")
+                    st.rerun()
     else:
         st.info("Nenhum PDF na pasta ainda.")
 
@@ -168,7 +192,7 @@ with st.sidebar:
             with open(caminho_salvar, "wb") as f:
                 f.write(arq.getbuffer())
         st.success(f"{len(upload_arquivos)} arquivo(s) salvo(s)!")
-        if st.button("🔄 Indexar Novos Editais"):
+        if st.button("🔄 Indexar Arquivos Enviados"):
             with st.spinner("Indexando trechos no banco vetorial..."):
                 qtd_arq, qtd_trechos = indexar_arquivos(vectorstore)
                 st.success(f"Concluído! {qtd_trechos} trechos indexados.")
