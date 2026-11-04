@@ -14,12 +14,31 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
 
-# Configuração da Página
+# Configuração da Página - Visual Limpo e Focado no Chat
 st.set_page_config(
     page_title="Agente Especialista em Editais",
-    page_icon="📋",
-    layout="wide"
+    page_icon="🎓",
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
+
+# Estilização CSS para ocultar elementos técnicos e menus desnecessários
+st.markdown("""
+<style>
+    /* Oculta menu padrão do Streamlit e rodapé */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Melhora a apresentação dos botões de exemplo */
+    .stButton>button {
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 PASTA_EDITAIS = "editais"
 PASTA_DB = "chroma_db_streamlit"
@@ -96,7 +115,8 @@ def indexar_arquivos(vstore):
     trechos = text_splitter.split_documents(docs_totais)
     ids_trechos = [criar_hash_unico(t) for t in trechos]
 
-    batch_size = 10
+    # Otimização: lotes de 50 para economizar a cota diária de requisições do Google
+    batch_size = 50
     i = 0
     while i < len(trechos):
         batch_splits = trechos[i:i + batch_size]
@@ -104,10 +124,10 @@ def indexar_arquivos(vstore):
         try:
             vstore.add_documents(batch_splits, ids=batch_ids)
             i += batch_size
-            time.sleep(0.4)
+            time.sleep(1.0)
         except Exception as e:
             if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                time.sleep(10)
+                time.sleep(15)
             else:
                 raise e
 
@@ -144,76 +164,49 @@ def formatar_contexto(documentos):
         blocos.append(f"--- [ARQUIVO: {arquivo_origem} | PÁGINA: {num_pagina}] ---\n{doc.page_content}")
     return "\n\n".join(blocos)
 
-# Barra Lateral (Upload e Gestão)
+# Barra Lateral Elegante (Inicia recolhida para o usuário)
 with st.sidebar:
-    st.header("⚙️ Painel de Controle")
+    st.title("📚 Editais Disponíveis")
     
-    if not api_key:
-        st.warning("⚠️ Chave GEMINI_API_KEY não configurada nos Secrets!")
-        user_key = st.text_input("Insira sua chave do Gemini temporariamente:", type="password")
-        if user_key:
-            api_key = user_key
-            st.rerun()
-
-    st.subheader("📄 Editais Carregados")
     pdfs_existentes = glob.glob(f"{PASTA_EDITAIS}/*.pdf") + glob.glob("*.pdf")
     pdfs_existentes = list(set([p for p in pdfs_existentes if not p.endswith("_db") and os.path.isfile(p)]))
     
     if pdfs_existentes:
-        for p in pdfs_existentes:
-            st.write(f"• `{os.path.basename(p)}`")
-            
-        # Verifica se o banco já foi indexado
-        total_indexado = 0
-        try:
-            total_indexado = vectorstore._collection.count() if vectorstore else 0
-        except Exception:
-            total_indexado = 0
-
-        if total_indexado == 0:
-            st.warning("⚠️ Editais carregados, mas ainda NÃO indexados no banco de dados!")
-            if st.button("🚀 Indexar Editais Agora", type="primary"):
-                with st.spinner("Indexando todos os editais... Isso levará cerca de 1 a 2 minutos."):
-                    qtd_arq, qtd_trechos = indexar_arquivos(vectorstore)
-                    st.success(f"🎉 {qtd_trechos} trechos indexados de {qtd_arq} editais!")
-                    st.rerun()
-        else:
-            st.success(f"🧠 Memória ativa: {total_indexado} trechos indexados.")
-            if st.button("🔄 Reindexar Todos os Editais"):
-                with st.spinner("Reindexando editais..."):
-                    qtd_arq, qtd_trechos = indexar_arquivos(vectorstore)
-                    st.success(f"Concluído! {qtd_trechos} trechos indexados.")
-                    st.rerun()
+        for p in sorted(pdfs_existentes):
+            nome_limpo = os.path.basename(p).replace(".pdf", "").replace("_EditaldeInscricao", "").replace("_EditaldeInscricaoRetificado", "")
+            st.markdown(f"• **{nome_limpo}**")
     else:
-        st.info("Nenhum PDF na pasta ainda.")
+        st.info("Nenhum edital cadastrado no momento.")
 
     st.divider()
-    st.subheader("📤 Enviar novo Edital")
-    upload_arquivos = st.file_uploader(
-        "Arraste novos editais em PDF:",
-        type=["pdf"],
-        accept_multiple_files=True
-    )
-    if upload_arquivos:
-        for arq in upload_arquivos:
-            caminho_salvar = os.path.join(PASTA_EDITAIS, arq.name)
-            with open(caminho_salvar, "wb") as f:
-                f.write(arq.getbuffer())
-        st.success(f"{len(upload_arquivos)} arquivo(s) salvo(s)!")
-        if st.button("🔄 Indexar Arquivos Enviados"):
-            with st.spinner("Indexando trechos no banco vetorial..."):
-                qtd_arq, qtd_trechos = indexar_arquivos(vectorstore)
-                st.success(f"Concluído! {qtd_trechos} trechos indexados.")
-                st.rerun()
-
-    st.divider()
-    if st.button("🗑️ Limpar Conversa"):
+    if st.button("🗑️ Limpar Conversa", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# Área Principal de Chat
-st.title("📋 Agente Especialista em Editais")
-st.markdown("Consulte regras, materiais permitidos, cronogramas e proibições de vestibulares e concursos com embasamento oficial de páginas.")
+    # Área de Gestão protegida dentro de um Expander recolhido
+    with st.expander("⚙️ Área Administrativa"):
+        st.caption("Apenas para administradores:")
+        upload_arquivos = st.file_uploader(
+            "Adicionar novo PDF:",
+            type=["pdf"],
+            accept_multiple_files=True
+        )
+        if upload_arquivos:
+            for arq in upload_arquivos:
+                caminho_salvar = os.path.join(PASTA_EDITAIS, arq.name)
+                with open(caminho_salvar, "wb") as f:
+                    f.write(arq.getbuffer())
+            st.success(f"{len(upload_arquivos)} arquivo(s) salvo(s)!")
+            if st.button("🔄 Indexar Novos Arquivos"):
+                with st.spinner("Indexando..."):
+                    indexar_arquivos(vectorstore)
+                    st.success("Concluído!")
+                    st.rerun()
+
+# Área Principal de Chat (Clean & Estilo ChatGPT)
+st.title("🎓 Consultor Inteligente de Editais")
+st.markdown("Tire dúvidas sobre regras, cronogramas, materiais e exigências de vestibulares oficiais.")
+st.caption("🏛️ **Bancas cadastradas:** UECE • UNIFOR • ENEM • UNICAMP • UEMA • URCA • UNICHRISTUS")
 
 # Inicializa histórico de mensagens
 if "messages" not in st.session_state:
