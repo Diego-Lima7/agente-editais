@@ -50,7 +50,8 @@ def carregar_motor_rag(api_key_val):
     llm_model = ChatGoogleGenerativeAI(
         model="gemini-3.5-flash",
         temperature=0.0,
-        google_api_key=api_key_val
+        google_api_key=api_key_val,
+        max_retries=5
     )
     vstore = Chroma(
         collection_name="colecao_editais_st",
@@ -255,21 +256,41 @@ if pergunta_para_rodar:
         with st.chat_message("user"):
             st.markdown(pergunta_para_rodar)
 
-        # Gera resposta do assistente
+        # Gera resposta do assistente com proteção contra limite de requisições
         with st.chat_message("assistant"):
             with st.spinner("Analisando as regras do edital..."):
-                retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
-                trechos_recuperados = retriever.invoke(pergunta_para_rodar)
+                trechos_recuperados = []
+                erro_busca = None
                 
-                if not trechos_recuperados:
+                # Tenta até 3 vezes com intervalo caso a API do Google esteja em resfriamento após a indexação
+                for tentativa in range(3):
+                    try:
+                        retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
+                        trechos_recuperados = retriever.invoke(pergunta_para_rodar)
+                        erro_busca = None
+                        break
+                    except Exception as e:
+                        erro_busca = e
+                        time.sleep(3)
+                
+                if erro_busca:
+                    resposta = (
+                        "⚠️ **Limite de requisições momentâneo do Google:**\n\n"
+                        "Como você acabou de indexar muitos editais de uma só vez (880 trechos!), a API do Google "
+                        "pediu um breve resfriamento de 30 a 60 segundos. Por favor, aguarde alguns instantes e tente novamente."
+                    )
+                elif not trechos_recuperados:
                     resposta = "Não encontrei informações sobre este tópico nos editais cadastrados."
                 else:
                     contexto_formatado = formatar_contexto(trechos_recuperados)
                     cadeia = prompt | llm | StrOutputParser()
-                    resposta = cadeia.invoke({
-                        "context": contexto_formatado,
-                        "question": pergunta_para_rodar
-                    })
+                    try:
+                        resposta = cadeia.invoke({
+                            "context": contexto_formatado,
+                            "question": pergunta_para_rodar
+                        })
+                    except Exception as e:
+                        resposta = f"⚠️ Ocorreu um erro ao gerar a resposta: {e}. Tente novamente em instantes."
                 
                 st.markdown(resposta)
                 st.session_state.messages.append({"role": "assistant", "content": resposta})
